@@ -2,11 +2,52 @@ name: Bible Shorts Automation
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Hello
-        run: echo "Automation Working"
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt update
+          sudo apt install ffmpeg -y
+
+      - name: Install Python Packages
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate Bible Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python generate.py
+
+      - name: Generate Images
+        run: |
+          python image_gen.py
+
+      - name: Generate Voice
+        run: |
+          python voice.py
+
+      - name: Build Video
+        run: |
+          python build_video.py
+
+      - name: Upload To YouTube
+        env:
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        run: |
+          python upload.py
